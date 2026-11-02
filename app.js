@@ -75,26 +75,22 @@
 
   // Moves a hint unlocks share one green style ([[m:...]]) rather than a colour each.
   const D = d => `[[m:${d.pips[0]},${d.pips[1]}]]`;
-  const andList = items => (items.length <= 1 ? items[0] || '' : items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]);
 
   function toStep(h) {
-    const easyCells = h.easy.flatMap(d => d.cells), moveCells = h.moves.flatMap(d => d.cells);
     if (!h.insights.length) {
-      const n = h.easy.length;
+      const d = h.easy[0];
       return {
-        rule: 'Easy moves', ruleKey: null, moves: [], easy: h.easy, state: h.state, focus: easyCells,
-        nudge: `${n === 1 ? 'One move needs' : `${n} moves need`} no tricks: single-cell regions, dead ends and dominoes that only fit one way.`,
-        text: `Place ${andList(h.easy.map(D))}, shown in grey on the board.`,
+        rule: 'Easy move', ruleKey: null, moves: [], easy: h.easy, state: h.state, focus: d.cells,
+        nudge: 'This one needs no tricks: look for single-cell regions, dead ends and dominoes that only fit one way.',
+        text: `Place ${D(d)}, shown in grey on the board.`,
       };
     }
     const ins = h.insights;
     const texts = ins.map((s, i) => (ins.length > 1 ? (i === 0 ? 'First: ' : i === ins.length - 1 ? 'Finally: ' : 'Then: ') : '') + s.text);
-    let pay = h.moves.length ? ` That lets you place ${andList(h.moves.map(D))}, shown in green` : '';
-    if (h.moves.length && h.easy.length) pay += `, along with ${h.easy.length === 1 ? 'one easy move' : h.easy.length + ' easy moves'} in grey`;
-    if (pay) pay += '.';
+    const pay = h.moves.length ? ` That lets you place ${D(h.moves[0])}, shown in green.` : '';
     return {
-      rule: ins.map(s => s.rule).join(' → '), ruleKey: ins[0].rule, moves: h.moves, easy: h.easy, state: h.state,
-      focus: [...new Set([...ins.flatMap(s => s.focus), ...moveCells, ...easyCells])],
+      rule: ins.map(s => s.rule).join(' → '), ruleKey: ins[0].rule, moves: h.moves, easy: [], state: h.state,
+      focus: [...new Set([...ins.flatMap(s => s.focus), ...h.moves.flatMap(d => d.cells)])],
       nudge: ins[0].nudge, text: texts.join(' ') + pay,
     };
   }

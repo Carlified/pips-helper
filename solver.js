@@ -962,13 +962,35 @@
     return placedList(B).filter(d => !before.has(d.cells.join(',')));
   };
 
-  // The next hint worth giving: the moves that follow by eye (easy), then the first insight(s)
-  // that make progress, chained until they unlock at least one more domino placement.
+  // Keep what a state has worked out, but leave only one new domino placed (beyond those in
+  // base). The others stay as known values and come back as later hints, one per hint.
+  function keepOnly(T, base, move) {
+    const U = clone(T);
+    for (const d of newPlacements(base, T)) {
+      if (move && d.cells.join(',') === move.cells.join(',')) continue;
+      const [i, j] = d.cells, e = eid(U.P, i, j);
+      U.counted[e] = 0;
+      U.used[tIdx(d.pips[0], d.pips[1])]--;
+      U.partner[i] = -1; U.partner[j] = -1;
+    }
+    return U;
+  }
+
+  // The next hint: one domino placement. If a move follows by eye, it's the first one the easy
+  // deductions reach. Otherwise it's the insight(s) that unlock a placement, plus that one move.
   function nextHint(S) {
     if (contradiction(S)) return null;
-    const A = settle(S);
-    const easy = newPlacements(S, A);
-    const hint = { easy, insights: [], moves: [], state: A };
+    let A = S;
+    for (let n = 0; n < 1000; n++) {
+      if (contradiction(A)) break;
+      let st = null;
+      for (const rule of OBVIOUS()) { st = rule(A); if (st) break; }
+      if (!st) break;
+      A = apply(A, st);
+      const found = newPlacements(S, A);
+      if (found.length) return { easy: [found[0]], insights: [], moves: [], state: keepOnly(A, S, found[0]) };
+    }
+    const hint = { easy: [], insights: [], moves: [], state: A };
     if (solved(A)) return hint;
     let B = A;
     for (let n = 0; n < 8; n++) {
@@ -980,8 +1002,11 @@
       B = settle(apply(B, st));
       if (newPlacements(A, B).length || solved(B)) break;
     }
-    hint.moves = newPlacements(A, B);
-    hint.state = B;
+    // Show the move closest to the reasoning: the one touching the most cells it mentions.
+    const focus = new Set(hint.insights.flatMap(s => s.focus));
+    const moves = newPlacements(A, B).sort((x, y) => y.cells.filter(c => focus.has(c)).length - x.cells.filter(c => focus.has(c)).length);
+    hint.moves = moves.slice(0, 1);
+    hint.state = keepOnly(B, S, hint.moves[0]);
     return hint;
   }
 
