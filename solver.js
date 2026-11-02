@@ -624,55 +624,122 @@
     for (let i = start; i <= arr.length - (k - acc.length); i++) { acc.push(arr[i]); yield* combos(arr, k, i + 1, acc); acc.pop(); }
   }
 
+  // Every way to fill one region that fits its condition, its cells' possible values, the
+  // dominoes inside it and the tray's supply. Each filling records how many of each value it uses
+  // across the whole region (known cells included). Null if there are too many to list.
+  function fillings(S, k, cap = 6000) {
+    const { P } = S;
+    const R = P.regions[k];
+    const { knownCount } = supply(S);
+    const open = R.cells.filter(c => known(S, c) < 0);
+    if (open.length > 7) return null;
+    const base = R.cells.filter(c => known(S, c) >= 0).map(c => known(S, c));
+    const baseSum = base.reduce((a, b) => a + b, 0);
+    const baseCounts = new Int8Array(7);
+    for (const v of base) baseCounts[v]++;
+    const pairs = [];
+    for (let x = 0; x < open.length; x++) for (let y = x + 1; y < open.length; y++) if (S.partner[open[x]] === open[y]) pairs.push([x, y]);
+    const fills = [];
+    const vals = new Int8Array(open.length), used = new Int16Array(7);
+    let overflow = false;
+    const rec = (d, sum) => {
+      if (overflow) return;
+      if (d === open.length) {
+        const s = baseSum + sum;
+        if (R.type === 'sum' && s !== R.n) return;
+        if (R.type === 'lt' && s >= R.n) return;
+        if (R.type === 'gt' && s <= R.n) return;
+        if (R.type === 'eq' && !(vals.every(v => v === vals[0]) && base.every(b => b === (open.length ? vals[0] : base[0])))) return;
+        if (R.type === 'ne') { const all = base.concat(Array.from(vals)); if (new Set(all).size !== all.length) return; }
+        for (const [x, y] of pairs) if (avail(S, tIdx(vals[x], vals[y])) <= 0) return;
+        if (fills.length >= cap) { overflow = true; return; }
+        const counts = baseCounts.slice();
+        for (const v of vals) counts[v]++;
+        fills.push({ vals: vals.slice(), counts });
+        return;
+      }
+      for (const v of valsOf(S.cand[open[d]])) {
+        if (knownCount[v] + used[v] + 1 > P.halves[v]) continue;
+        used[v]++; vals[d] = v;
+        rec(d + 1, sum + v);
+        used[v]--;
+      }
+    };
+    rec(0, 0);
+    return overflow ? null : { open, fills };
+  }
+
+  const shapeOf = f => Array.from(f.counts).flatMap((n, v) => Array(n).fill(v)).join(' + ');
+
   function sumCombinations(S) {
     const { P } = S;
-    const { knownCount } = supply(S);
     for (let k = 0; k < P.regions.length; k++) {
       const R = P.regions[k];
-      const open = R.cells.filter(c => known(S, c) < 0);
-      if (!open.length || open.length > 6) continue;
-      const base = R.cells.filter(c => known(S, c) >= 0).map(c => known(S, c));
-      const baseSum = base.reduce((a, b) => a + b, 0);
-      const ok = open.map(() => 0);
-      const shapes = new Set();
-      const vals = new Array(open.length);
-      const used = new Int16Array(7);
-      const pairs = []; // joined pairs inside the region among open cells
-      for (let x = 0; x < open.length; x++) for (let y = x + 1; y < open.length; y++) if (S.partner[open[x]] === open[y]) pairs.push([x, y]);
-      let count = 0;
-      const rec = (d, sum) => {
-        if (count > 20000) return;
-        if (d === open.length) {
-          const s = baseSum + sum;
-          if (R.type === 'sum' && s !== R.n) return;
-          if (R.type === 'lt' && s >= R.n) return;
-          if (R.type === 'gt' && s <= R.n) return;
-          if (R.type === 'eq' && !vals.every(v => v === vals[0] && base.every(b => b === v))) return;
-          if (R.type === 'ne') { const all = base.concat(vals); if (new Set(all).size !== all.length) return; }
-          for (const [x, y] of pairs) if (avail(S, tIdx(vals[x], vals[y])) <= 0) return;
-          count++;
-          vals.forEach((v, x) => { ok[x] |= bit(v); });
-          shapes.add(base.concat(vals).sort((a, b) => a - b).join('+'));
-          return;
-        }
-        for (const v of valsOf(S.cand[open[d]])) {
-          if (knownCount[v] + used[v] + 1 > P.halves[v]) continue;
-          used[v]++; vals[d] = v;
-          rec(d + 1, sum + v);
-          used[v]--;
-        }
-      };
-      rec(0, 0);
-      if (count > 20000 || !count) continue;
-      const elims = open.flatMap((c, x) => elimsTo(S, c, ok[x]));
+      const F = fillings(S, k);
+      if (!F || !F.open.length || !F.fills.length) continue;
+      const ok = F.open.map((c, x) => F.fills.reduce((m, f) => m | bit(f.vals[x]), 0));
+      const elims = F.open.flatMap((c, x) => elimsTo(S, c, ok[x]));
       if (!elims.length) continue;
-      const shown = [...shapes].slice(0, 4).map(s => s.replace(/\+/g, ' + '));
+      const shapes = [...new Set(F.fills.map(shapeOf))];
+      const shown = shapes.slice(0, 4);
       const goal = R.type === 'sum' ? `make ${R.n}` : R.type === 'lt' ? `stay under ${R.n}` : R.type === 'gt' ? `go over ${R.n}` : R.type === 'eq' ? 'match' : 'all differ';
+      const cells = [...new Set(elims.map(e => e.cell))];
       return step({
         rule: 'Sum combinations', level: 3, elims, focus: R.cells, regions: [k],
-        nudge: `List the ways to fill the ${G(k)} region.`,
-        text: `List the ways the ${G(k)} region's cells can ${goal} using their possible values and what the tray holds: ${shapes.size > 4 ? 'the options include ' : 'only '}${list(shown, 'or')}${shapes.size > 4 ? ', among others' : ''}. Values that appear in none of them can go: ${C([...new Set(elims.map(e => e.cell))])}.`,
+        nudge: `List every way to fill the ${G(k)} region.`,
+        text: `Going through what the tray still holds, the only ways the ${G(k)} region's cells can ${goal} are ${list(shown, 'or')}${shapes.length > 4 ? ` (and ${shapes.length - 4} more like them)` : ''}. None of them puts ${valuesText([...new Set(elims.map(e => e.v))])} on ${C(cells)}, so ${cells.length === 1 ? 'it' : 'they'} can't be ${valuesText([...new Set(elims.map(e => e.v))])}.`,
       });
+    }
+    return null;
+  }
+
+  // The tray holds a fixed number of each value, and every one ends up on the board. List every
+  // way to fill every region, and rule out fillings of one region that would leave the others
+  // too many or too few of a value.
+  function sharedSupply(S) {
+    const { P } = S;
+    const F = P.regions.map((r, k) => fillings(S, k));
+    const inRegion = new Set(P.regions.flatMap(r => r.cells));
+    const loose = [];
+    for (let i = 0; i < P.N; i++) if (!inRegion.has(i)) loose.push(i);
+    for (let v = 0; v <= 6; v++) {
+      const total = P.halves[v];
+      const lo = F.map((f, k) => f ? Math.min(...f.fills.map(x => x.counts[v])) : P.regions[k].cells.filter(c => known(S, c) === v).length);
+      const hi = F.map((f, k) => f ? Math.max(...f.fills.map(x => x.counts[v])) : P.regions[k].cells.filter(c => S.cand[c] & bit(v)).length);
+      const looseKnown = loose.filter(c => known(S, c) === v);
+      const looseMax = loose.filter(c => S.cand[c] & bit(v)).length;
+      for (let k = 0; k < P.regions.length; k++) {
+        const f = F[k];
+        if (!f || !f.open.length || !f.fills.length) continue;
+        const othersLo = lo.reduce((s, x, j) => s + (j === k ? 0 : x), 0) + looseKnown.length;
+        const othersHi = hi.reduce((s, x, j) => s + (j === k ? 0 : x), 0) + looseMax;
+        const most = total - othersLo, least = total - othersHi;
+        const keep = f.fills.filter(x => x.counts[v] <= most && x.counts[v] >= least);
+        if (keep.length === f.fills.length || !keep.length) continue;
+        const ok = f.open.map((c, x) => keep.reduce((m, y) => m | bit(y.vals[x]), 0));
+        const elims = f.open.flatMap((c, x) => elimsTo(S, c, ok[x]));
+        if (!elims.length) continue;
+        const cut = [...new Set(f.fills.filter(x => !keep.includes(x)).map(shapeOf))].slice(0, 3);
+        const cells = [...new Set(elims.map(e => e.cell))];
+        const gone = valuesText([...new Set(elims.map(e => e.v))]);
+        let why;
+        if (f.fills.some(x => x.counts[v] > most)) {
+          // Too many: the other regions already need most of this value.
+          const users = lo.map((n, j) => ({ n, j })).filter(x => x.j !== k && x.n > 0);
+          const parts = users.slice(0, 4).map(x => `the ${G(x.j)} region ${F[x.j] ? `needs at least ${x.n}` : `already has ${x.n}`}`);
+          if (users.length > 4) parts.push(`${users.length - 4} more regions need some too`);
+          if (looseKnown.length) parts.push(`${C(looseKnown)} ${looseKnown.length === 1 ? 'is' : 'are'} already ${v}`);
+          why = `The tray has ${plural(total, `half showing ${v}`, `halves showing ${v}`)}. Every way to fill the other regions uses some of them: ${list(parts)}. That leaves at most ${most} for the ${G(k)} region`;
+        } else {
+          // Too few: the rest of the board can't hold all of this value.
+          why = `All ${plural(total, `half showing ${v}`, `halves showing ${v}`)} in the tray have to go somewhere, and the rest of the board can take at most ${othersHi} of them, so the ${G(k)} region needs at least ${least}`;
+        }
+        return step({
+          rule: 'Shared supply', level: 3, elims, focus: [...new Set([...P.regions[k].cells, ...looseKnown])], regions: [k],
+          nudge: `Count how many ${v}s the other regions need, compared with how many the tray has.`,
+          text: `${why}. So the ${G(k)} region can't be filled as ${list(cut, 'or')}, and ${C(cells)} can't be ${gone}.`,
+        });
+      }
     }
     return null;
   }
@@ -722,7 +789,12 @@
   }
 
   // ---- Level 4 ------------------------------------------------------------------------------
-  const BASIC = () => [fixedRegion, deadEnd, dominoEnds, usedUp, regionLimits, allEqual, allDifferent, doesntFit, insideRegion, whereDoTheyGo, onlyHome, onlyCover];
+  // Deductions a player makes by eye. They're applied silently, and only the moves they lead to
+  // are shown.
+  const OBVIOUS = () => [fixedRegion, deadEnd, dominoEnds, usedUp, regionLimits, allEqual, allDifferent, doesntFit, insideRegion, onlyCover];
+  // Deductions that need counting or looking at the whole board: these are what hints explain.
+  const INSIGHT = () => [whereDoTheyGo, onlyHome, sumCombinations, sharedSupply, stranded, boardTotal, whatIf];
+  const BASIC = () => [...OBVIOUS(), whereDoTheyGo, onlyHome];
 
   // Follow the basic rules from a state until something breaks (or nothing changes).
   function follow(S, limit = 40) {
@@ -740,7 +812,9 @@
     return { bad: null, trail };
   }
 
-  function whatIf(S) {
+  // When unlocking moves from a state is wanted, prefer the assumption whose refutation leads,
+  // by easy deductions, to a domino placement.
+  function whatIf(S, unlockFrom) {
     const tries = [];
     for (let i = 0; i < S.P.N; i++) {
       if (known(S, i) >= 0 || pc(S.cand[i]) !== 2) continue;
@@ -750,19 +824,19 @@
       if (joined) continue;
       tries.push({ pair: [i, j], label: `${C(i)} and ${C(j)} were one domino`, ask: `${C(i)} and ${C(j)} are one domino`, assume: T => { T.partner[i] = j; T.partner[j] = i; } });
     }
-    let best = null;
+    const found = [];
     for (const t of tries) {
       const T = clone(S);
       t.assume(T);
       normalize(T);
-      const res = follow(T, best ? Math.min(40, best.trail.length) : 40);
-      if (res.bad && (!best || res.trail.length < best.trail.length)) {
-        best = { ...t, ...res };
-        if (best.trail.length <= 1) break;
-      }
+      const res = follow(T, 40);
+      if (res.bad) found.push({ ...t, ...res });
     }
-    if (!best) return null;
-    const chain = best.trail.length ? `following the rules (${list([...new Set(best.trail)])}) leads to a dead end: ${best.bad.text}` : `then ${best.bad.text}`;
+    if (!found.length) return null;
+    found.sort((x, y) => x.trail.length - y.trail.length);
+    const refute = t => (t.pair ? { joins: [], splits: [t.pair], elims: [] } : { joins: [], splits: [], elims: [{ cell: t.cell, v: t.v }] });
+    const best = (unlockFrom && found.find(t => newPlacements(unlockFrom, settle(apply(S, refute(t)))).length)) || found[0];
+    const chain = best.trail.length ? `the easy deductions that follow (${list([...new Set(best.trail)].map(r => r.toLowerCase()))}) end in a contradiction: ${best.bad.text}` : `then ${best.bad.text}`;
     const base = {
       rule: 'What if?', level: 4, focus: best.pair || [best.cell], regions: [],
       nudge: `Try assuming ${best.ask} and see what goes wrong.`,
@@ -851,7 +925,7 @@
     });
   }
 
-  const RULES = () => [...BASIC(), stranded, sumCombinations, boardTotal, whatIf];
+  const RULES = () => [...OBVIOUS(), whereDoTheyGo, onlyHome, stranded, sumCombinations, sharedSupply, boardTotal, whatIf];
 
   function nextStep(S) {
     if (contradiction(S)) return null;
@@ -870,6 +944,47 @@
     return st;
   }
 
+  // Apply the obvious deductions until none is left.
+  function settle(S) {
+    let T = S;
+    for (let n = 0; n < 1000; n++) {
+      if (contradiction(T)) return T;
+      let st = null;
+      for (const rule of OBVIOUS()) { st = rule(T); if (st) break; }
+      if (!st) return T;
+      T = apply(T, st);
+    }
+    return T;
+  }
+
+  const newPlacements = (A, B) => {
+    const before = new Set(placedList(A).map(d => d.cells.join(',')));
+    return placedList(B).filter(d => !before.has(d.cells.join(',')));
+  };
+
+  // The next hint worth giving: the moves that follow by eye (easy), then the first insight(s)
+  // that make progress, chained until they unlock at least one more domino placement.
+  function nextHint(S) {
+    if (contradiction(S)) return null;
+    const A = settle(S);
+    const easy = newPlacements(S, A);
+    const hint = { easy, insights: [], moves: [], state: A };
+    if (solved(A)) return hint;
+    let B = A;
+    for (let n = 0; n < 8; n++) {
+      let st = null;
+      for (const rule of INSIGHT()) { st = rule === whatIf ? whatIf(B, A) : rule(B); if (st) break; }
+      if (!st) st = reveal(B);
+      if (!st) break;
+      hint.insights.push(st);
+      B = settle(apply(B, st));
+      if (newPlacements(A, B).length || solved(B)) break;
+    }
+    hint.moves = newPlacements(A, B);
+    hint.state = B;
+    return hint;
+  }
+
   function check(S) {
     const issues = [];
     const bad = contradiction(S);
@@ -885,7 +1000,7 @@
   const solved = S => S.P.edges.filter(([i, j]) => S.counted[eid(S.P, i, j)]).length * 2 === S.P.N;
 
   root.PipsSolver = {
-    build, initial, clone, apply, nextStep, check, solve, solved, contradiction,
+    build, initial, clone, apply, nextStep, nextHint, settle, check, solve, solved, contradiction,
     known, isPlaced, placedList, valsOf, tIdx, tPips, avail, slots, eid, RULES,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

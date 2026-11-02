@@ -16,8 +16,7 @@
 <style>
   :root {
     --bg: #f4f3ef; --surface: #ffffff; --text: #1d1f22; --muted: #6b6f76;
-    --board: #dcc2b9; --blank: #e8d6cf; --cand: #5f5a57; --known: #3d3936;
-    --outline: #1d1f22; --face: #fbfaf8; --pip: #3b3633; --wall: #9a8f8a;
+    --board: #dcc2b9; --blank: #e8d6cf; --outline: #1d1f22; --face: #fbfaf8; --pip: #3b3633; --wall: #9a8f8a;
     --elim: #d43c3c; --place: #1f9d55; --issue: #fde2e2;
     --k0: #2f62c9; --k0bg: #dce7ff; --k1: #b77900; --k1bg: #ffeab8; --k2: #7a48cf; --k2bg: #ebdfff; --k3: #0f8576; --k3bg: #cdf1eb; --k4: #c0367f; --k4bg: #ffd9ec;
     --btn: #1d1f22; --btn-text: #ffffff; --btn2: #e7e5df;
@@ -25,8 +24,7 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6;
-      --board: #8f7a74; --blank: #a8938b; --cand: #f3eeeb; --known: #ffffff;
-      --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
+      --board: #8f7a74; --blank: #a8938b; --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
       --elim: #ff7272; --place: #52d48c; --issue: #4a2323;
       --k0: #8fb3ff; --k0bg: #23365c; --k1: #f0b93b; --k1bg: #4a3910; --k2: #bb99ff; --k2bg: #39295a; --k3: #4fd1bf; --k3bg: #123f39; --k4: #ff8cc6; --k4bg: #4d2139;
       --btn: #ecebe7; --btn-text: #16181b; --btn2: #2d3136;
@@ -34,8 +32,7 @@
   }
   :root[data-theme="dark"] {
     --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6;
-    --board: #8f7a74; --blank: #a8938b; --cand: #f3eeeb; --known: #ffffff;
-    --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
+    --board: #8f7a74; --blank: #a8938b; --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
     --elim: #ff7272; --place: #52d48c; --issue: #4a2323;
     --k0: #8fb3ff; --k0bg: #23365c; --k1: #f0b93b; --k1bg: #4a3910; --k2: #bb99ff; --k2bg: #39295a; --k3: #4fd1bf; --k3bg: #123f39; --k4: #ff8cc6; --k4bg: #4d2139;
     --btn: #ecebe7; --btn-text: #16181b; --btn2: #2d3136;
@@ -68,18 +65,11 @@
   #board { width: 100%; display: block; user-select: none; -webkit-user-select: none; }
   #board .cellbg { fill: var(--blank); }
   #board .boardbg { fill: var(--board); }
-  #board .cand { fill: var(--cand); font-size: 21px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
-  #board .cand.el { fill: var(--elim); font-weight: 800; }
-  #board .strike { stroke: var(--elim); stroke-width: 3; }
-  #board .known { fill: var(--known); font-size: 50px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
-  #board .known.new { fill: var(--place); }
   #board .badge text { fill: #fff; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
   #board .face { fill: var(--face); stroke: var(--outline); stroke-width: 5; }
   #board .pip { fill: var(--pip); }
-  #board .join { fill: none; stroke: var(--outline); stroke-width: 4; stroke-dasharray: 10 7; }
-  #board .join.new, #board .face.new { stroke: var(--place); stroke-width: 6; }
-  #board .wall { stroke: var(--wall); stroke-width: 6; stroke-linecap: round; }
-  #board .wall.new { stroke: var(--elim); }
+  #board .face.new { stroke: var(--place); stroke-width: 7; }
+  #board .face.ghost { stroke: var(--wall); stroke-width: 5; stroke-dasharray: 12 7; opacity: 0.8; }
   #board .dim { opacity: 0.32; }
   #board .tag text { fill: #fff; font-size: 18px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
   #board .issue { fill: none; stroke: var(--elim); stroke-width: 5; }
@@ -93,11 +83,9 @@
 
   #panel { margin-top: 14px; background: var(--surface); border-radius: 16px; padding: 14px; }
   #technique { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 4px; }
-  #technique .move { color: var(--place); }
   #message { margin: 0 0 12px; min-height: 2.8em; }
   #ruleLink { display: inline-block; font-size: 14px; color: var(--k0); margin: -4px 0 12px; text-decoration: none; }
   #ruleLink[hidden] { display: none; }
-  #nextMove { margin-top: 8px; width: 100%; }
   .ref { border-radius: 6px; padding: 0 5px; font-weight: 700; white-space: nowrap; }
   .ref.k0 { background: var(--k0bg); box-shadow: inset 0 0 0 1.5px var(--k0); }
   .ref.k1 { background: var(--k1bg); box-shadow: inset 0 0 0 1.5px var(--k1); }
@@ -105,6 +93,7 @@
   .ref.k3 { background: var(--k3bg); box-shadow: inset 0 0 0 1.5px var(--k3); }
   .ref.k4 { background: var(--k4bg); box-shadow: inset 0 0 0 1.5px var(--k4); }
   .ref.dom { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .ref.mv { color: var(--place); box-shadow: inset 0 0 0 1.5px var(--place); }
 
   #issues { margin-top: 12px; }
   .issue-item { background: var(--issue); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
@@ -145,7 +134,6 @@
       <button id="back" disabled>Back</button>
       <button class="primary" id="hint">Hint</button>
     </div>
-    <button class="small" id="nextMove">Skip to next move</button>
   </section>
 
   <div id="issues"></div>

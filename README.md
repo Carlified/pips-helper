@@ -10,9 +10,9 @@ This is a personal project I made for my girlfriend. It isn't a product, it isn'
 
 1. Take a screenshot of today's Pips puzzle and load it into the helper. It can be a fresh puzzle or one you've already started.
 2. The helper reads the board's shape, the coloured regions and their conditions, the dominoes in the tray, and any dominoes you've already placed.
-3. Tap **Hint** for a nudge, again to see which cells are involved, and once more for the full explanation. **Apply & next** moves on. **Skip to next move** jumps straight to the next domino you can place.
+3. Tap **Hint** for a nudge, again to see which cells are involved, and once more for the full explanation and the dominoes it lets you place. **Apply & next** moves on.
 
-The game has no pencil marks, so the helper keeps its own notes: the values each cell could still have, and which neighbouring cells are, or can't be, one domino. Hints use 17 human-style rules, easiest first. Each hint names the cells (lettered A, B, …), regions and dominoes involved in matching colours, and links to a short explanation of its rule.
+The game has no pencil marks, so hints skip what you'd see at a glance (single-cell regions, dead ends, dominoes that only fit one way): those are worked out silently and their moves shown in grey. Each hint is the counting or whole-board reasoning that unlocks the next placement, such as listing every way to fill the regions against what the tray holds. It names the cells (lettered A, B, …), regions and dominoes involved in matching colours, and links to a short explanation of its rule.
 
 ## Installing on an iPhone
 
