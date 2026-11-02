@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon-180.png">
+<title>Pips Solving Rules</title>
+<style>
+  :root { --bg: #f4f3ef; --surface: #ffffff; --text: #1d1f22; --muted: #6b6f76; --link: #2f62c9; --code: #efede7; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6; --link: #8fb3ff; --code: #2d3136; }
+  }
+  :root[data-theme="dark"] { --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6; --link: #8fb3ff; --code: #2d3136; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    max-width: 560px; margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 17px; margin: 0 0 6px; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 4px 8px; }
+  a { color: var(--link); }
+  .back { font-weight: 600; text-decoration: none; }
+  section { background: var(--surface); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; scroll-margin-top: 12px; }
+  section p { margin: 0 0 8px; }
+  section p:last-child { margin-bottom: 0; }
+  section:target { box-shadow: 0 0 0 2px var(--link); }
+  .ex { color: var(--muted); font-size: 15px; }
+  code { background: var(--code); border-radius: 4px; padding: 0 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Solving rules</h1>
+  <a class="back" href="./">← Back to helper</a>
+</header>
+
+<section>
+  <p>The helper keeps notes like a careful player would: the values each cell could still have, and which neighbouring cells are, or can't be, one domino. Each hint is the easiest rule below that makes progress. Steps that place a domino are <em>moves</em>; the rest are notes that only exist in the helper.</p>
+  <p>Pips puzzles can have more than one valid solution, so no rule assumes there's only one.</p>
+</section>
+
+<h3>Level 1: at a glance</h3>
+<section id="fixed-region">
+  <h2>Fixed region</h2>
+  <p>Some conditions allow only one value. A one-cell <code>4</code> region is 4, a one-cell <code>&gt;5</code> is 6, and anything marked <code>&lt;1</code> is all 0s. A region adding up to 0 is all 0s, and one adding up to 6 × its size is all 6s.</p>
+</section>
+<section id="dead-end">
+  <h2>Dead end</h2>
+  <p>Every cell is covered by a domino, and a domino covers two neighbouring cells. If a cell has only one neighbour it can still pair with, that's its partner. Once two cells are joined, neither can pair with anyone else, which often creates the next dead end, so narrow corridors unzip from their ends.</p>
+</section>
+<section id="domino-ends">
+  <h2>Domino ends</h2>
+  <p>Two joined cells must be one of the dominoes still in the tray, so each end limits the other.</p>
+  <p class="ex">One end is 6, and the only unplaced dominoes with a 6 are 6|1 and 6|4, so the other end is 1 or 4.</p>
+</section>
+<section id="used-up">
+  <h2>Used up</h2>
+  <p>Every half in the tray ends up on the board, so a value appears exactly as many times as the tray shows it. Once that many cells are known to be 3, no other cell can be 3.</p>
+</section>
+
+<h3>Level 2: a little counting</h3>
+<section id="region-limits">
+  <h2>Region limits</h2>
+  <p>In a sum, <code>&lt;</code> or <code>&gt;</code> region, the other cells can only add up to so little or so much, which limits each cell.</p>
+  <p class="ex">In a three-cell 15 region, the other two cells add up to at most 12, so every cell is at least 3.</p>
+</section>
+<section id="all-equal">
+  <h2>All equal</h2>
+  <p>Every cell in an <code>=</code> region has the same value, so each keeps only the values all of them can have. The tray also has to hold enough of that value: a four-cell <code>=</code> region of 2s needs four halves showing 2.</p>
+</section>
+<section id="all-different">
+  <h2>All different</h2>
+  <p>Every cell in a <code>≠</code> region has a different value, much like a Sudoku row. A known value can't appear again, and if two cells can only be the same two values, nobody else in the region can have them. If only as many values are available as the region has cells, it uses exactly those.</p>
+</section>
+<section id="doesnt-fit">
+  <h2>Doesn't fit</h2>
+  <p>Two neighbouring cells can only be one domino if some unplaced domino fits their possible values, and suits any region they share. If none does, they're different dominoes.</p>
+  <p class="ex">Two neighbours that must both be 6 can't be one domino unless the tray has a 6|6.</p>
+</section>
+<section id="domino-inside-a-region">
+  <h2>Domino inside a region</h2>
+  <p>A domino lying entirely inside one region must suit it on its own: inside an <code>=</code> region it's a double, inside a <code>≠</code> region it isn't, and inside a sum region its pips count towards the total.</p>
+</section>
+<section id="where-do-they-go">
+  <h2>Where do the 6s go?</h2>
+  <p>Every half has to land somewhere. If two 6s still need a place and only two cells can still be 6, both of them are.</p>
+</section>
+<section id="only-home">
+  <h2>Only home</h2>
+  <p>Look for an unplaced domino with very few places to go. Doubles and extremes like 6|6 or 0|0 are the usual suspects. If there's only one place, it goes there. If every place it could go covers the same cell, that cell is one of its values.</p>
+</section>
+<section id="only-cover">
+  <h2>Only cover</h2>
+  <p>List every way a cell could be covered: which neighbour, which domino, which way round. If there's only one, that's it. If they all give the cell the same value, that's its value.</p>
+</section>
+<section id="stranded-cells">
+  <h2>Stranded cells</h2>
+  <p>Dominoes can't reach across between separate gaps, so each gap has to be fillable on its own. A gap with an odd number of cells can't be, and neither can one whose cells, coloured like a chessboard, aren't half one colour and half the other. If joining two cells would leave such a gap, they're different dominoes.</p>
+</section>
+
+<h3>Level 3: combining facts</h3>
+<section id="sum-combinations">
+  <h2>Sum combinations</h2>
+  <p>For a small region, list every way to fill it that fits its condition, its cells' possible values and what the tray holds. Values that appear in none of them can go.</p>
+  <p class="ex">A two-cell 10 region could be 4 + 6 or 5 + 5. If the tray has only one 5, it's 4 and 6.</p>
+</section>
+<section id="board-total">
+  <h2>Board total</h2>
+  <p>The tray's pips add up to a known total, and every pip lands somewhere. So the cells outside the exact-sum regions hold the total minus those regions' targets, which works like one more sum region (the same idea as the "45 rule" in Killer Sudoku).</p>
+</section>
+
+<h3>Level 4: last resorts</h3>
+<section id="what-if">
+  <h2>What if?</h2>
+  <p>Assume something (a cell's value, or that two cells are one domino) and follow the simpler rules until something breaks: a cell with no values left, a domino with nowhere to go, a region that can't be satisfied. Then the assumption was wrong.</p>
+</section>
+<section id="reveal">
+  <h2>Reveal</h2>
+  <p>When nothing else applies, the helper places one domino from a valid solution. If the puzzle can be finished more than one way, it says so: that part is a free choice.</p>
+</section>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon-180.png">
+<title>About Pips Helper</title>
+<style>
+  :root { --bg: #f4f3ef; --surface: #ffffff; --text: #1d1f22; --muted: #6b6f76; --link: #2f62c9; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6; --link: #8fb3ff; }
+  }
+  :root[data-theme="dark"] { --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6; --link: #8fb3ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    max-width: 520px; margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; }
+  a { color: var(--link); }
+  .back { font-weight: 600; text-decoration: none; }
+  section { background: var(--surface); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
+  section p { margin: 0 0 8px; }
+  section p:last-child, ul:last-child { margin-bottom: 0; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .note { font-size: 13px; color: var(--muted); text-align: center; margin-top: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>About</h1>
+  <a class="back" href="./">← Back to helper</a>
+</header>
+
+<section>
+  <p>Pips Helper reads a screenshot of the day's Pips puzzle and walks you through the next logical step, one hint at a time.</p>
+  <p>It's a personal project I made for my girlfriend. It isn't a product, it isn't for sale, and it isn't maintained.</p>
+</section>
+
+<section>
+  <h2>Privacy</h2>
+  <p>Everything runs on your device. Screenshots are never uploaded, and there are no analytics, accounts or tracking. The site is hosted on GitHub Pages, so GitHub sees the usual request information (such as your IP address) when the page loads.</p>
+</section>
+
+<section>
+  <h2>Disclaimers</h2>
+  <ul>
+    <li><strong>Not affiliated with The New York Times.</strong> This project has no connection to The New York Times Company or NYT Games, and isn't endorsed or sponsored by them. "Pips" is used only to say which puzzle's screenshots this tool can read. All trademarks belong to their owners. No puzzles or puzzle data are included or downloaded; it only reads screenshots you take yourself.</li>
+    <li><strong>Made with AI.</strong> Most of the code and text was written with the help of Claude, an AI assistant made by Anthropic. It was reviewed and tested, but may still contain mistakes.</li>
+    <li><strong>Hints can be wrong.</strong> Screenshot reading is tuned to how Pips looks today and may misread unusual devices or future app updates. Use <em>Compare screenshot</em> and <em>Fix a condition or domino</em> to check and correct it.</li>
+    <li><strong>Some puzzles have more than one answer.</strong> The helper only states what must be true, and says so when a step is a free choice.</li>
+    <li><strong>Not maintained</strong>, so it may stop working if Pips changes how it looks.</li>
+    <li><strong>Not for profit.</strong> It's free and has no ads.</li>
+    <li><strong>No warranty.</strong> It's provided as is.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>License</h2>
+  <p>Released under the <a href="https://github.com/Carlified/pips-helper/blob/main/LICENSE">MIT License</a>. © 2026 Carl van Rooyen.</p>
+  <p>Source code: <a href="https://github.com/Carlified/pips-helper">github.com/Carlified/pips-helper</a></p>
+</section>
+
+<p class="note">Made with care, for one person in particular.</p>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pips Helper">
+<meta name="theme-color" content="#f4f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Pips Helper</title>
+<style>
+  :root {
+    --bg: #f4f3ef; --surface: #ffffff; --text: #1d1f22; --muted: #6b6f76;
+    --board: #dcc2b9; --blank: #e8d6cf; --cand: #5f5a57; --known: #3d3936;
+    --outline: #1d1f22; --face: #fbfaf8; --pip: #3b3633; --wall: #9a8f8a;
+    --elim: #d43c3c; --place: #1f9d55; --issue: #fde2e2;
+    --k0: #2f62c9; --k0bg: #dce7ff; --k1: #b77900; --k1bg: #ffeab8; --k2: #7a48cf; --k2bg: #ebdfff; --k3: #0f8576; --k3bg: #cdf1eb; --k4: #c0367f; --k4bg: #ffd9ec;
+    --btn: #1d1f22; --btn-text: #ffffff; --btn2: #e7e5df;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6;
+      --board: #8f7a74; --blank: #a8938b; --cand: #f3eeeb; --known: #ffffff;
+      --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
+      --elim: #ff7272; --place: #52d48c; --issue: #4a2323;
+      --k0: #8fb3ff; --k0bg: #23365c; --k1: #f0b93b; --k1bg: #4a3910; --k2: #bb99ff; --k2bg: #39295a; --k3: #4fd1bf; --k3bg: #123f39; --k4: #ff8cc6; --k4bg: #4d2139;
+      --btn: #ecebe7; --btn-text: #16181b; --btn2: #2d3136;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181b; --surface: #202327; --text: #ecebe7; --muted: #9a9ea6;
+    --board: #8f7a74; --blank: #a8938b; --cand: #f3eeeb; --known: #ffffff;
+    --outline: #0b0c0d; --face: #f1eeea; --pip: #3b3633; --wall: #f3eeeb;
+    --elim: #ff7272; --place: #52d48c; --issue: #4a2323;
+    --k0: #8fb3ff; --k0bg: #23365c; --k1: #f0b93b; --k1bg: #4a3910; --k2: #bb99ff; --k2bg: #39295a; --k3: #4fd1bf; --k3bg: #123f39; --k4: #ff8cc6; --k4bg: #4d2139;
+    --btn: #ecebe7; --btn-text: #16181b; --btn2: #2d3136;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+    max-width: 520px; margin: 0 auto; min-height: 100vh;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+  .head-actions { display: flex; align-items: center; gap: 12px; }
+  .about { color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 12px 16px; cursor: pointer;
+    background: var(--btn2); color: var(--text);
+  }
+  button.primary { background: var(--btn); color: var(--btn-text); }
+  button.small { padding: 8px 12px; font-size: 14px; border-radius: 10px; }
+  button:disabled { opacity: 0.4; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+
+  #empty { text-align: center; padding: 48px 8px; }
+  #empty p { color: var(--muted); }
+  #pick { font-size: 18px; padding: 16px 24px; margin-top: 8px; }
+
+  #board { width: 100%; display: block; user-select: none; -webkit-user-select: none; }
+  #board .cellbg { fill: var(--blank); }
+  #board .boardbg { fill: var(--board); }
+  #board .cand { fill: var(--cand); font-size: 21px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  #board .cand.el { fill: var(--elim); font-weight: 800; }
+  #board .strike { stroke: var(--elim); stroke-width: 3; }
+  #board .known { fill: var(--known); font-size: 50px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  #board .known.new { fill: var(--place); }
+  #board .badge text { fill: #fff; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+  #board .face { fill: var(--face); stroke: var(--outline); stroke-width: 5; }
+  #board .pip { fill: var(--pip); }
+  #board .join { fill: none; stroke: var(--outline); stroke-width: 4; stroke-dasharray: 10 7; }
+  #board .join.new, #board .face.new { stroke: var(--place); stroke-width: 6; }
+  #board .wall { stroke: var(--wall); stroke-width: 6; stroke-linecap: round; }
+  #board .wall.new { stroke: var(--elim); }
+  #board .dim { opacity: 0.32; }
+  #board .tag text { fill: #fff; font-size: 18px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+  #board .issue { fill: none; stroke: var(--elim); stroke-width: 5; }
+
+  #tray { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  #tray svg { width: 64px; height: 32px; }
+  #tray .tile { fill: var(--face); stroke: #444; stroke-width: 2.5; }
+  #tray .used { opacity: 0.25; }
+  #tray .div { stroke: #bbb; stroke-width: 2; }
+  #tray .pip { fill: #444; }
+
+  #panel { margin-top: 14px; background: var(--surface); border-radius: 16px; padding: 14px; }
+  #technique { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 4px; }
+  #technique .move { color: var(--place); }
+  #message { margin: 0 0 12px; min-height: 2.8em; }
+  #ruleLink { display: inline-block; font-size: 14px; color: var(--k0); margin: -4px 0 12px; text-decoration: none; }
+  #ruleLink[hidden] { display: none; }
+  #nextMove { margin-top: 8px; width: 100%; }
+  .ref { border-radius: 6px; padding: 0 5px; font-weight: 700; white-space: nowrap; }
+  .ref.k0 { background: var(--k0bg); box-shadow: inset 0 0 0 1.5px var(--k0); }
+  .ref.k1 { background: var(--k1bg); box-shadow: inset 0 0 0 1.5px var(--k1); }
+  .ref.k2 { background: var(--k2bg); box-shadow: inset 0 0 0 1.5px var(--k2); }
+  .ref.k3 { background: var(--k3bg); box-shadow: inset 0 0 0 1.5px var(--k3); }
+  .ref.k4 { background: var(--k4bg); box-shadow: inset 0 0 0 1.5px var(--k4); }
+  .ref.dom { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+  #issues { margin-top: 12px; }
+  .issue-item { background: var(--issue); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+  #tools { margin-top: 12px; }
+  #compare { margin-top: 12px; display: none; }
+  #compare img { width: 100%; border-radius: 6px; display: block; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  #busy { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pips Helper</h1>
+  <div class="head-actions">
+    <a class="about" href="rules.html">Rules</a>
+    <a class="about" href="about.html">About</a>
+    <button class="small" id="newShot" hidden>New screenshot</button>
+  </div>
+</header>
+
+<input type="file" id="file" accept="image/*" hidden>
+
+<section id="empty">
+  <p>Take a screenshot of today's Pips puzzle, then load it here. Everything runs on your phone.</p>
+  <button class="primary" id="pick">Choose screenshot</button>
+  <p id="busy"></p>
+</section>
+
+<main id="main" hidden>
+  <svg id="board" role="img" aria-label="Puzzle board"></svg>
+  <div id="tray"></div>
+
+  <section id="panel">
+    <p id="technique"></p>
+    <p id="message"></p>
+    <a id="ruleLink" hidden></a>
+    <div class="row">
+      <button id="back" disabled>Back</button>
+      <button class="primary" id="hint">Hint</button>
+    </div>
+    <button class="small" id="nextMove">Skip to next move</button>
+  </section>
+
+  <div id="issues"></div>
+
+  <div class="row" id="tools">
+    <button class="small" id="fixBtn">Fix a condition or domino</button>
+    <button class="small" id="compareBtn">Compare screenshot</button>
+  </div>
+  <div id="compare"><img id="compareImg" alt="Board and tray from your screenshot"></div>
+  <p class="note" id="note"></p>
+</main>
+
+<script src="vision.js"></script>
+<script src="solver.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
